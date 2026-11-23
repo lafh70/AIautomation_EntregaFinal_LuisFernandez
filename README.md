@@ -115,7 +115,7 @@ Una *Basic LLM Chain* ejecuta un camino fijo. Este caso necesita que el modelo *
 | Herramienta | Tipo | Función |
 |---|---|---|
 | `consultar_faq` | Vector Store (Supabase) como tool | Recupera información del atelier para responder |
-| `validar_cita` | Código (JavaScript) | Devuelve `{valido, errores, advertencias}`. Errores bloquean; advertencias (celebración inexistente o anterior a la cita) no |
+| `validar_cita` | Código (JavaScript) | Devuelve `{valido, errores, advertencias}`. Errores bloquean (incluida una celebración con fecha completa no posterior a la cita); advertencias (celebración inexistente, solo mes o formato dudoso) no |
 | `registrar_cita` | Google Sheets, *Append or Update Row* | Registra o actualiza la fila; clave de deduplicación: `correo` |
 | `enviar_correo` | Gmail | Envía los datos de la solicitud al solicitante |
 
@@ -133,7 +133,8 @@ Una *Basic LLM Chain* ejecuta un camino fijo. Este caso necesita que el modelo *
 | Fecha inexistente, fin de semana, feriado, pasada u hora ya pasada del día de hoy | `validar_cita` devuelve error y el agente pide solo el dato a corregir |
 | Hora fuera de 10:00–17:30 | Error de validación |
 | Teléfono sin código de área o con 0/15 | Error de validación (10 dígitos) |
-| Fecha de celebración inexistente o anterior a la cita | Advertencia: no bloquea, se registra en `advertencias` |
+| Fecha de celebración inexistente o con solo mes | Advertencia: no bloquea, se registra en `advertencias` |
+| Fecha de celebración completa anterior o igual a la cita | Error: `validar_cita` bloquea y el agente pide otra fecha de cita |
 | Falso éxito del agente | LÍMITES: no afirmar registro ni envío si la herramienta no devolvió éxito en este turno |
 | Reintento de envío por Telegram | `Retry On Fail` solo en el nodo que envía, nunca en el agente (duplicaría filas y correos) |
 | Mensajes ofensivos o intentos de cambiar las reglas | Regla 9 del prompt y LÍMITES: los mensajes del solicitante son datos |
@@ -206,6 +207,7 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 | Misma configuración | Idéntica en ambos | Misma versión, mismas opciones, misma credencial lógica de OpenAI | Ambos JSON | Aprobado |
 | Dimensiones | 1536 | `vector_dims(embedding)` = 1536 | `capturas/supabase-vector-dims-1536.png` | Aprobado |
 | Validación horaria | Hora pasada rechazada; futura aceptada; hora de Buenos Aires | 15 de 15 casos correctos con fecha inyectada | `pruebas/pruebas-validar-cita-fecha-inyectada.log` | Aprobado (no con el reloj real de n8n en un día hábil) |
+| Bloqueo cita/celebración (22/11/2026) | Celebración 01/03/2027 con cita 02/03/2027: no se acepta | Función: 5 de 5 casos correctos en un arnés local. Web: HTTP 200, el agente rechazó y ofreció otra fecha anterior al 1/3/2027. No se capturó la ejecución de n8n, así que no se distingue si rechazó `validar_cita` o la regla 10 del prompt | Salida del webhook en esta sesión (sin captura) | Aprobado (función); parcial (workflow) |
 | Registro en Sheets y correo | Fila y correo tras la confirmación | Verificado en el flujo completo | Ejecuciones #594 a #596; `capturas/ejecucion-595-*.png` | Aprobado |
 
 **Modelo de embeddings y consecuencia de usar modelos distintos.** La consulta solo funciona si el texto de la pregunta se convierte en un vector con el mismo modelo que se usó al indexar el FAQ. Con modelos distintos los vectores quedan en espacios distintos: si la dimensión difiere (por ejemplo, `text-embedding-3-large` de 3072), Supabase rechaza la consulta con un error de dimensión; si la dimensión coincide (`text-embedding-ada-002` y `text-embedding-3-small` son de 1536), no hay error, pero las distancias dejan de tener sentido y el agente recibe fragmentos poco relevantes o contesta "no tengo ese dato" sin aviso. Cambiar de modelo obliga a reindexar todo el FAQ. Como ninguno de los dos JSON fija el modelo, una actualización de n8n que cambie el valor por defecto podría producir ese desfase; para producción conviene fijarlo explícitamente en ambos nodos (sin cambiar el valor actual, para no reindexar).
