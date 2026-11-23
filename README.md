@@ -135,6 +135,7 @@ Una *Basic LLM Chain* ejecuta un camino fijo. Este caso necesita que el modelo *
 | Teléfono sin código de área o con 0/15 | Error de validación (10 dígitos) |
 | Fecha de celebración inexistente o con solo mes | Advertencia: no bloquea, se registra en `advertencias` |
 | Fecha de celebración completa anterior o igual a la cita | Error: `validar_cita` bloquea y el agente pide otra fecha de cita |
+| Fecha de celebración que ya pasó | Error: `validar_cita` bloquea y el agente pide una celebración futura |
 | Falso éxito del agente | LÍMITES: no afirmar registro ni envío si la herramienta no devolvió éxito en este turno |
 | Reintento de envío por Telegram | `Retry On Fail` solo en el nodo que envía, nunca en el agente (duplicaría filas y correos) |
 | Mensajes ofensivos o intentos de cambiar las reglas | Regla 9 del prompt y LÍMITES: los mensajes del solicitante son datos |
@@ -239,7 +240,7 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 - **Memoria de sesión:** la clave `from` la genera el navegador en la web; la memoria simple vive en la instancia de n8n.
 - **No modifica ni cancela citas;** deriva a una persona.
 - **Datos personales enviados a OpenAI** (ver sección 4).
-- **Celebración en el pasado:** `validar_cita` no revisa si la fecha de la celebración ya pasó. En la ejecución #609 (22/11/2026), con celebración el 20/11/2026, el agente propuso agendar la cita "antes del 20 de noviembre de 2026", fecha imposible. El bloqueo de orden funcionó, pero la sugerencia no es útil; corrección propuesta: rechazar celebraciones anteriores a hoy.
+- **Celebración en el pasado:** `validar_cita` no revisa si la fecha de la celebración ya pasó. En la ejecución #609 (22/11/2026), con celebración el 20/11/2026, el agente propuso agendar la cita "antes del 20 de noviembre de 2026", fecha imposible. El bloqueo de orden funcionó, pero la sugerencia no es útil; corrección aplicada en `validar_cita`: una celebración anterior a hoy (fecha completa o solo mes) devuelve error. Verificada con 7 casos en un arnés local; falta repetir el mensaje de #609 en el workflow activo.
 - **Reloj del servidor de n8n:** la lógica de `validar_cita` (hora pasada, zona horaria de Buenos Aires) se verificó ejecutando el mismo código con una fecha de referencia inyectada, no con el reloj real de n8n en un día hábil. Cualquier desvío de la zona horaria del servidor no estaría cubierto; el código fija la zona `America/Argentina/Buenos_Aires` de forma explícita.
 - **Entrega del aviso de error no verificada:** en la prueba con API key inválida (#548) el workflow llegó hasta el envío del mensaje de disculpa, pero el nodo de envío falló por conexión. No hay evidencia de que la clienta lo haya recibido.
 - **Columnas heredadas** en el Sheet (`aviso`, `campos_faltantes`, `nota_original`) no se usan.
