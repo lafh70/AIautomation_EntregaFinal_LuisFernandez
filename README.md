@@ -202,7 +202,7 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 | CORS desde otro origen | Un sitio ajeno no puede leer la respuesta | Bloqueado en el navegador (2 pedidos) | `pruebas/http-webhook-22nov.log` [3] | Aprobado |
 | Rechazo del origen o autenticación en el servidor | No aplica: el webhook no tiene autenticación | No verificado desde un cliente sin navegador | Comando `curl` en `pruebas/http-webhook-22nov.log` | Pendiente (requiere una máquina con red) |
 | Telegram Trigger activo | Workflow activo con Webhook y Telegram Trigger | n8n informa `active: true` y 2 disparadores | Consulta a n8n del 22/11/2026 | Aprobado |
-| Telegram: mensaje entrante y respuesta | El bot responde | Verificado el 20/11 con respuesta del bot; no repetido el 22/11 | Ejecuciones #554 y #555; `capturas/ejecucion-554-*.png`, `capturas/ejecucion-555-*.png` | Aprobado (20/11). Repetición del 22/11: pendiente |
+| Telegram: mensaje entrante y respuesta | El bot responde | 22/11/2026, 21:37–21:38: tres mensajes entrantes por Telegram (#607, #608, #609, `canal: telegram`); el agente respondió y el nodo `Send a text message` se ejecutó en #607 y #608 (en #609 la captura no muestra ese nodo). La respuesta recibida en el chat de Telegram no se capturó | `capturas/ejecucion-607-telegram-entrante.png`, `capturas/ejecucion-608-telegram-datos-contacto.png`, `capturas/ejecucion-609-telegram-casamiento.png` (chat id y datos personales ocultos) | Aprobado |
 | Modelo de embeddings exacto | Mismo modelo en ingesta y consulta | Ambos nodos: versión 1.2, `options: {}`, sin modelo fijado; el modelo por defecto de la versión 1.2 es `text-embedding-3-small` (código fuente de n8n) | `Ingesta_FAQ_Atelier.json`, `workflow-agente-rag.json` | Aprobado por configuración; no observado en una ejecución |
 | Misma configuración | Idéntica en ambos | Misma versión, mismas opciones, misma credencial lógica de OpenAI | Ambos JSON | Aprobado |
 | Dimensiones | 1536 | `vector_dims(embedding)` = 1536 | `capturas/supabase-vector-dims-1536.png` | Aprobado |
@@ -239,6 +239,7 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 - **Memoria de sesión:** la clave `from` la genera el navegador en la web; la memoria simple vive en la instancia de n8n.
 - **No modifica ni cancela citas;** deriva a una persona.
 - **Datos personales enviados a OpenAI** (ver sección 4).
+- **Celebración en el pasado:** `validar_cita` no revisa si la fecha de la celebración ya pasó. En la ejecución #609 (22/11/2026), con celebración el 20/11/2026, el agente propuso agendar la cita "antes del 20 de noviembre de 2026", fecha imposible. El bloqueo de orden funcionó, pero la sugerencia no es útil; corrección propuesta: rechazar celebraciones anteriores a hoy.
 - **Reloj del servidor de n8n:** la lógica de `validar_cita` (hora pasada, zona horaria de Buenos Aires) se verificó ejecutando el mismo código con una fecha de referencia inyectada, no con el reloj real de n8n en un día hábil. Cualquier desvío de la zona horaria del servidor no estaría cubierto; el código fija la zona `America/Argentina/Buenos_Aires` de forma explícita.
 - **Entrega del aviso de error no verificada:** en la prueba con API key inválida (#548) el workflow llegó hasta el envío del mensaje de disculpa, pero el nodo de envío falló por conexión. No hay evidencia de que la clienta lo haya recibido.
 - **Columnas heredadas** en el Sheet (`aviso`, `campos_faltantes`, `nota_original`) no se usan.
@@ -362,6 +363,7 @@ Opcionales: nombre de la agasajada y fecha de la celebración.
 | [ejecucion-539-entrada-invalida.png](capturas/ejecucion-539-entrada-invalida.png) | Entrada inválida cortada por `entrada_valida` |
 | [ejecucion-554-telegram-solicitud-cita.png](capturas/ejecucion-554-telegram-solicitud-cita.png) | Solicitud de cita por Telegram |
 | [ejecucion-555-telegram-produccion-rag.png](capturas/ejecucion-555-telegram-produccion-rag.png) | FAQ por Telegram |
+| [ejecucion-607-telegram-entrante.png](capturas/ejecucion-607-telegram-entrante.png), [ejecucion-608-telegram-datos-contacto.png](capturas/ejecucion-608-telegram-datos-contacto.png), [ejecucion-609-telegram-casamiento.png](capturas/ejecucion-609-telegram-casamiento.png) | Mensajes entrantes por Telegram del 22/11/2026 y respuesta del agente (#609: celebración anterior a la cita) |
 | [ejecucion-569-web-cita-completa.png](capturas/ejecucion-569-web-cita-completa.png) | Cita por web |
 | [ejecucion-573-validar-cita-io.png](capturas/ejecucion-573-validar-cita-io.png), [ejecucion-580-validar-cita-advertencia-io.png](capturas/ejecucion-580-validar-cita-advertencia-io.png), [ejecucion-feriado-25dic-validar-cita-io.png](capturas/ejecucion-feriado-25dic-validar-cita-io.png) | Entrada y salida de `validar_cita`: error, advertencia y feriado |
 | [ejecucion-578-falso-exito-sin-herramientas.png](capturas/ejecucion-578-falso-exito-sin-herramientas.png) | Falso éxito por memoria compartida |
