@@ -23,3 +23,14 @@ Cliente: navegador integrado, pestana abierta en https://atelier-rag.netlify.app
   NO se probo desde un cliente sin navegador (curl/script): esta maquina no tiene salida de red.
   Ese caso requiere correr, desde una maquina con red:
     curl -i -X POST https://n8n.automatiadash.com/webhook/atelier-whatsapp -H "Content-Type: application/json" -H "Origin: https://sitio-ajeno.example" -d '{"from":"prueba-origen","message":"hola"}'
+
+[4] curl desde un cliente sin navegador, con Origin ajeno (23/11/2026 02:12 UTC, PowerShell 5.1, curl.exe)
+  Comando: curl.exe -i -X POST https://n8n.automatiadash.com/webhook/atelier-whatsapp
+           -H "Origin: https://sitio-ajeno.example" -H "Content-Type: application/json" --data "@body.json"
+  body.json: {"from":"prueba-externa","message":"Prueba de origen externo"}
+  Resultado: HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: https://atelier-rag.netlify.app   (no refleja el origen ajeno)
+  Cuerpo: {"output":"Para la primera cita, te recomendamos traer fotos de referencia, ideas de diseno, ..."}
+  Conclusion: el servidor NO rechaza el origen ajeno ni exige autenticacion: el agente se ejecuto.
+  CORS solo impide que un navegador de otro sitio lea la respuesta (prueba [3]).
+  (Un primer intento con el JSON mal escapado devolvio HTTP 422 "Failed to parse request body": error de comillas en PowerShell, sin ejecutar el workflow.)
