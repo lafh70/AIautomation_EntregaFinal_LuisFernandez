@@ -9,6 +9,35 @@ Asistente de mensajería para un atelier de vestidos a medida. Atiende por **web
 
 ---
 
+## Probalo en vivo
+
+El flujo es **uno solo** y tiene dos canales de entrada. Es una demo: usá datos de prueba (la cita queda como *solicitud pendiente*, nadie la confirma).
+
+### Web
+- **Página:** https://atelier-rag.netlify.app (página de solicitud de cita del atelier de demo).
+- **Endpoint del flujo (webhook de producción, método POST):** `https://n8n.automatiadash.com/webhook/atelier-whatsapp`
+
+```bash
+curl -X POST https://n8n.automatiadash.com/webhook/atelier-whatsapp \
+  -H "Content-Type: application/json" \
+  -d '{"message": "¿Cuál es el horario de atención?", "from": "prueba-001"}'
+```
+
+- `message`: el texto del usuario. `from`: identificador de la conversación (la memoria del agente se guarda por este valor; usá uno distinto para empezar una conversación nueva).
+- La respuesta vuelve en el cuerpo de la respuesta HTTP.
+- El webhook solo admite pedidos de navegador desde `https://atelier-rag.netlify.app` (CORS); `curl` y herramientas como Postman no tienen esa restricción.
+
+### Telegram
+1. Abrí https://t.me/Atelier_demo_bot (bot **@Atelier_demo_bot**) y tocá **Iniciar**.
+2. Escribile en texto, por ejemplo:
+   - `¿Cuánto dura la primera cita?` (consulta el FAQ con RAG)
+   - `Quiero pedir una cita` (el asistente te pide nombre, apellido, teléfono, correo, motivo, día y hora, valida los datos, te muestra un resumen y espera tu "sí")
+3. Las citas son de lunes a viernes, de 10:00 a 17:30 (hora de Buenos Aires), en fechas futuras y sin feriados.
+
+### Requisitos
+- El workflow tiene que estar **activo** en n8n (con los dos disparadores: Webhook y Telegram Trigger). Si el servicio de demo está apagado, importá el JSON en tu propia instancia siguiendo la sección 12.
+- Solo mensajes de texto: fotos, audios y stickers reciben una respuesta fija.
+
 ## 1. Caso de negocio
 
 La diseñadora atiende a mano las consultas de las clientas (horarios, plazos, pagos, pruebas, ubicación) y coordina las citas. Ese trabajo es repetitivo, interrumpe la tarea de diseño y no se atiende fuera de horario.
