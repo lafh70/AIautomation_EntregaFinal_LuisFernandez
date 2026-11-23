@@ -3,7 +3,7 @@
 Asistente de mensajería para un atelier de vestidos a medida. Atiende por **web** y por **Telegram**, responde preguntas frecuentes con RAG y toma solicitudes de cita: las valida con código, las registra en Google Sheets y envía un correo de confirmación al solicitante. Toda cita queda **pendiente de confirmación** por parte del atelier.
 
 - Workflow: `workflow-agente-rag.json` (sanitizado, sin credenciales ni datos reales)
-- Ingesta del FAQ: se realiza con un workflow separado (`Ingesta_FAQ_Atelier`), descrito en la sección 4; no forma parte de los archivos de este repositorio
+- Ingesta del FAQ: workflow separado `Ingesta_FAQ_Atelier.json` (sanitizado, con el FAQ ficticio de demo), descrito en la sección 4
 - Capturas: carpeta `/capturas`
 - Stack: n8n · OpenAI (gpt-4.1 + embeddings) · Supabase (vector store) · Google Sheets · Gmail · Telegram
 
@@ -90,7 +90,7 @@ Una *Basic LLM Chain* ejecuta un camino fijo. Este caso necesita que el modelo *
 |---|---|---|
 | Modelo de chat | `gpt-4.1` (nube, OpenAI) | Buen seguimiento de instrucciones y llamadas a herramientas en español rioplatense; no requiere hardware propio |
 | Embeddings | OpenAI | Mismo proveedor que el modelo de chat; una sola credencial |
-| Vector store | Supabase (tabla `documents`) | Plan gratuito, integración nativa con n8n |
+| Vector store | Supabase (tabla `documents`, pgvector) | Se necesita un almacén **persistente**: el vector store en memoria de n8n se pierde al reiniciar y obligaría a reindexar el FAQ en cada arranque. Supabase ofrece pgvector con plan gratuito, integración nativa con n8n y una base Postgres estándar (migrable). Alternativas (Pinecone, Qdrant) agregan otro servicio y credencial sin beneficio para un FAQ de ~14 fragmentos. Compromiso: cambiar de modelo de embeddings exige reindexar todo |
 | Registro de citas | Google Sheets | El atelier ya sabe usar hojas de cálculo; costo cero |
 | Correo | Gmail | Confirmación al solicitante |
 
@@ -215,6 +215,16 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 **Modelo de embeddings y consecuencia de usar modelos distintos.** La consulta solo funciona si el texto de la pregunta se convierte en un vector con el mismo modelo que se usó al indexar el FAQ. Con modelos distintos los vectores quedan en espacios distintos: si la dimensión difiere (por ejemplo, `text-embedding-3-large` de 3072), Supabase rechaza la consulta con un error de dimensión; si la dimensión coincide (`text-embedding-ada-002` y `text-embedding-3-small` son de 1536), no hay error, pero las distancias dejan de tener sentido y el agente recibe fragmentos poco relevantes o contesta "no tengo ese dato" sin aviso. Cambiar de modelo obliga a reindexar todo el FAQ. Los JSON del repo fijan el modelo explícitamente; en el n8n activo se usa el valor por defecto del nodo, que n8n omite al exportar, así que una actualización de n8n que lo cambie podría producir ese desfase: para producción conviene fijarlo también en la instancia.
 
 ## 9. Trazabilidad con los requisitos del proyecto final
+
+### Resumen frente a los criterios de evaluación oficiales
+
+| Criterio (peso) | Dónde está | Evidencia principal | Límites declarados |
+|---|---|---|---|
+| Implementación del workflow en n8n (50 %) | Secciones 2 y 5; `workflow-agente-rag.json` e `Ingesta_FAQ_Atelier.json` | 2 entradas (web y Telegram), RAG con Supabase y `text-embedding-3-small`, AI Agent con 4 herramientas, `gpt-4.1`, JSON sin credenciales; ejecuciones #594–#596, #606, #616 | Orden de herramientas guiado por el prompt (sección 10); el ID del Sheet es un marcador `REEMPLAZAR_ID_SHEET` |
+| Caso de negocio, ROI y justificación (10 %) | Secciones 1, 3 y 7 | Cálculo con supuestos declarados, tres escenarios, indicadores de piloto | Supuestos, no métricas reales del atelier |
+| Configuración del AI Agent y del modelo (25 %) | Secciones 3, 4 y 14 | System prompt estructurado completo; justificación de nube vs Ollama, de Supabase y de embeddings | Parte del control depende de instrucciones en lenguaje natural |
+| Manejo de excepciones y robustez (15 %) | Sección 6 y pruebas de la sección 8 | Salida de error del agente (#548), entrada inválida, validación de fechas y celulares, sin duplicados (#594–#596) | Entrega del aviso de error no verificada; webhook sin autenticación; `from` lo elige el cliente (sección 13) |
+
 
 | Requisito | Implementación | Evidencia | Estado |
 |---|---|---|---|
