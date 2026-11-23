@@ -1,0 +1,77 @@
+[PASS] T1a Hora pasada, mismo día (10:00 < 13:00)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=10:00
+   salida: {"valido":false,"errores":["La hora de la cita ya pasó (hoy son las 13:00)"],"advertencias":[]}
+
+[PASS] T1b Fecha pasada (día anterior)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-23 hora_cita=11:00
+   salida: {"valido":false,"errores":["La fecha cae en feriado (Día de la Soberanía Nacional): el atelier no atiende","La fecha de la cita ya pasó (hoy es 2026-11-24)"],"advertencias":[]}
+
+[PASS] T2a Hora futura, mismo día (15:00 > 13:00)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=15:00
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T2b Fecha futura, hora cualquiera hábil
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-25 hora_cita=10:00
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T3a Coincidencia exacta (13:00 == 13:00)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=13:00
+   salida: {"valido":false,"errores":["La hora de la cita ya pasó (hoy son las 13:00)"],"advertencias":[]}
+
+[PASS] T3b Un minuto antes (12:59)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=12:59
+   salida: {"valido":false,"errores":["La hora de la cita ya pasó (hoy son las 13:00)"],"advertencias":[]}
+
+[PASS] T3c Un minuto después (13:01)
+   ahora inyectado: 2026-11-24T16:00:00Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=13:01
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T3d Con segundos en el reloj (13:00:45) y cita 13:00
+   ahora inyectado: 2026-11-24T16:00:45Z (UTC) = 24/11/26, 13:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=13:00
+   salida: {"valido":false,"errores":["La hora de la cita ya pasó (hoy son las 13:00)"],"advertencias":[]}
+
+[PASS] T3e Límite superior de atención 17:30 con ahora 09:00 BA
+   ahora inyectado: 2026-11-24T12:00:00Z (UTC) = 24/11/26, 09:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=17:30
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T3f Fuera de horario 17:31
+   ahora inyectado: 2026-11-24T12:00:00Z (UTC) = 24/11/26, 09:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=17:31
+   salida: {"valido":false,"errores":["La hora está fuera del horario de atención (10:00 a 17:30)"],"advertencias":[]}
+
+[PASS] T4a Zona horaria: en UTC ya es 25/11, en BA sigue siendo 24/11 23:30
+   ahora inyectado: 2026-11-25T02:30:00Z (UTC) = 24/11/26, 23:30 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=10:00
+   salida: {"valido":false,"errores":["La hora de la cita ya pasó (hoy son las 23:30)"],"advertencias":[]}
+
+[PASS] T4b Zona horaria: cita 25/11 válida (hoy BA = 24/11)
+   ahora inyectado: 2026-11-25T02:30:00Z (UTC) = 24/11/26, 23:30 en Buenos Aires
+   entrada: fecha_cita=2026-11-25 hora_cita=10:00
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T4c Cambio de día en BA: 03:00Z = 00:00 del 24/11 BA, cita 24/11 10:00 válida
+   ahora inyectado: 2026-11-24T03:00:00Z (UTC) = 24/11/26, 00:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=10:00
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T4d Un minuto antes del cambio de día BA (02:59Z = 23/11 23:59 BA, feriado): cita 24/11 válida
+   ahora inyectado: 2026-11-24T02:59:00Z (UTC) = 23/11/26, 23:59 en Buenos Aires
+   entrada: fecha_cita=2026-11-24 hora_cita=10:00
+   salida: {"valido":true,"errores":[],"advertencias":[]}
+
+[PASS] T4e Feriado 23/11 sigue rechazado
+   ahora inyectado: 2026-11-22T12:00:00Z (UTC) = 22/11/26, 09:00 en Buenos Aires
+   entrada: fecha_cita=2026-11-23 hora_cita=10:00
+   salida: {"valido":false,"errores":["La fecha cae en feriado (Día de la Soberanía Nacional): el atelier no atiende"],"advertencias":[]}
+
+Resumen: 15 PASS, 0 FAIL de 15
+Node v22.23.5; código tomado de workflow-agente-rag.json (nodo validar_cita, 4306 caracteres)

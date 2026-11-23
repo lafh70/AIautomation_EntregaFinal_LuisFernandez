@@ -1,0 +1,162 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "id"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        -128
+      ],
+      "id": "6516a88f-eaa8-4062-a032-62985593a119",
+      "name": "Supabase Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        144
+      ],
+      "id": "cee5a426-cd78-49ae-84fc-86d9d0736200",
+      "name": "Embeddings OpenAI"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.FAQ }}",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        64
+      ],
+      "id": "c55ea000-8f4a-4440-8202-9aca9f90546f",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -48
+      ],
+      "id": "fc444f7b-d67f-42a9-a334-f7245d956177",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6754654e-be3e-44f9-a04a-fb228ad7fac8",
+              "name": "FAQ",
+              "value": "=PREGUNTAS FRECUENTES - ATELIER DE DEMO, ALTA COSTURA Y VESTIDOS DE NOVIA\n\n1. ¿Qué hace el atelier?\nSomos un atelier de alta costura y vestidos de novia en la Avenida Alvear, en Buenos Aires. Diseñamos y confeccionamos vestidos a medida para novias y para eventos. Cada vestido se interpreta según el gusto, el estilo y las medidas de la clienta.\n\n2. ¿Cuál es el horario de atención?\nAtendemos de lunes a viernes, de 10:00 a 18:00. La última cita del día es a las 17:30. No atendemos sábados, domingos ni feriados.\n\n3. ¿Dónde queda el atelier?\nEstamos en Avenida Alvear 1234, Buenos Aires, Argentina. Se recomienda llegar unos minutos antes de la cita.\n\n4. ¿Cómo pido una cita?\nPodés solicitarla por este chat indicando nombre, apellido, teléfono, correo, motivo, día y hora. La solicitud queda pendiente hasta que el atelier la confirme. La cita de primera consulta dura 30 minutos.\n\n5. ¿Cómo es el proceso para hacer un vestido?\nPrimero hay una consulta inicial para conocer tu idea y tomar medidas. Luego se define el diseño y se eligen las telas. Después hay dos pruebas para ajustar el vestido y, por último, la entrega. Además, te acompañamos a vestirte el día del evento.\n\n6. ¿Cuánto tarda en estar listo un vestido?\nEl plazo habitual es de 6 a 8 semanas desde la aprobación del diseño. Para fechas cercanas al evento, consultá con el atelier en la primera cita, porque depende de la disponibilidad.\n\n7. ¿Con cuánta anticipación conviene venir?\nRecomendamos pedir la primera cita con al menos 3 meses de anticipación a la fecha del evento. Los vestidos de novia requieren más tiempo.\n\n8. ¿Cuánto cuesta un vestido?\nEl precio depende del diseño, la tela y el trabajo necesario. El presupuesto se entrega en la primera consulta, después de ver tu idea. No se informan precios por chat.\n\n9. ¿Cómo se paga?\nPara iniciar el trabajo se solicita una seña del 50% y el saldo se abona al retirar el vestido. Medios de pago: efectivo, transferencia y tarjeta.\n\n10. ¿Cuántas pruebas incluye?\nSe incluyen dos pruebas. Si se necesitan ajustes adicionales, el atelier lo coordina con la clienta.\n\n11. ¿Puedo ir acompañada a la cita?\nSí, podés venir con una o dos personas de confianza.\n\n12. ¿Puedo llevar una foto o una idea de vestido?\nSí. Traer fotos de referencia ayuda mucho. El atelier adapta el diseño a tu estilo y medidas.\n\n13. ¿Se pueden hacer arreglos de vestidos que ya tengo?\nConsultá con el atelier. Los arreglos se evalúan caso por caso y no se informan por chat.\n\n14. ¿Puedo cambiar o cancelar una cita?\nPara cambiar o cancelar una cita, el atelier debe comunicarse con vos. El asistente no puede modificar citas ya solicitadas.\n\n15. ¿Cómo hablo con una persona del atelier?\nPodés escribirnos por WhatsApp al +54 9 11 0000-0000 o por correo a contacto@atelier-demo.example. También podés dejar tu nombre y teléfono en el chat y el atelier se pondrá en contacto en el horario de atención.\n\n16. ¿Qué tipos de vestidos hacen?\nHacemos vestidos de novia, vestidos de fiesta y diseños de alta costura a medida para eventos.\n\n17. ¿Con qué telas trabajan?\nLas telas se eligen junto con la clienta en la consulta inicial, según el diseño y la ocasión.\n\n18. ¿Cuánto dura la primera cita?\nLa primera cita dura 30 minutos. En ella conocemos tu idea, tomamos medidas y te contamos cómo sigue el proceso.\n\n19. ¿Qué tengo que llevar a la primera cita?\nTe recomendamos llevar fotos de referencia, ideas de diseño, la fecha del evento y, si ya los tenés, los zapatos o accesorios que pensás usar.\n\n20. ¿Cómo me confirman la cita?\nCuando solicitás una cita queda pendiente. El atelier se comunica con vos para confirmarla por teléfono o por correo.\n\n21. ¿Puedo cambiar el diseño una vez aprobado?\nUna vez aprobado el diseño y comenzada la confección, los cambios importantes pueden modificar el plazo y el presupuesto. Se evalúan caso por caso con el atelier.\n\n22. ¿Qué pasa si cambian mis medidas antes de la entrega?\nLos ajustes menores se resuelven en las pruebas. Si el cambio es grande, consultalo con el atelier.\n\n23. ¿Qué pasa con la seña si cancelo?\nLa seña corresponde al inicio del trabajo. Las condiciones ante una cancelación se explican en la consulta inicial con el atelier, y no se informan por chat.\n\n24. ¿Pueden hacer varios vestidos para un mismo evento?\nSí, podemos coordinar varios vestidos para un mismo evento. Consultá con el atelier para organizar las citas.\n\n25. ¿Cuáles son los datos de contacto del atelier?\nAtelier de demo, Avenida Alvear 1234, Buenos Aires, Argentina. WhatsApp: +54 9 11 0000-0000. Correo: contacto@atelier-demo.example.\n\n26. ¿Quién dirige el atelier?\nUna diseñadora de moda con formación universitaria en Diseño de Moda.\n\n27. ¿Qué trayectoria tiene el atelier?\nEl atelier abrió su primer local en 2014 y presentó colecciones en la Semana de la Alta Costura.\n\n28. ¿Cuál es el estilo del atelier?\nUn estilo elegante, fresco, moderno y atemporal, que combina tendencias con lo que pide cada clienta en los diseños a medida.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        -48
+      ],
+      "id": "ac960b33-77c6-46d7-8b5d-da16968365a9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        304,
+        192
+      ],
+      "id": "611d02b4-3f80-4d99-820d-a60635fb4d77",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {}
+}
