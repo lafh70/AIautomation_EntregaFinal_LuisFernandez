@@ -14,7 +14,7 @@ Asistente de mensajería para un atelier de vestidos a medida. Atiende por **web
 El flujo es **uno solo** y tiene dos canales de entrada. Es una demo: usá datos de prueba (la cita queda como *solicitud pendiente*, nadie la confirma).
 
 ### Web
-- **Página:** https://atelier-rag.netlify.app (página de solicitud de cita del atelier de demo).
+- **Chat web:** https://atelier-rag.netlify.app. Tiene una caja de texto y un botón **Enviar**; al enviar, la página hace un `POST` JSON `{from, message}` al endpoint de abajo y muestra el campo `output` de la respuesta (verificado el 22/11/2026, ver sección 8).
 - **Endpoint del flujo (webhook de producción, método POST):** `https://n8n.automatiadash.com/webhook/atelier-whatsapp`
 
 ```bash
@@ -191,6 +191,25 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 
 **Resultado de la prueba de duplicados:** 1 fila y 2 correos (uno por sesión); el reenvío dentro de una misma sesión lo evita la regla 7 del prompt.
 
+### Pruebas de cierre (22/11/2026)
+
+| Prueba | Resultado esperado | Resultado obtenido | Evidencia | Estado |
+|---|---|---|---|---|
+| Qué hace el botón Enviar | `POST` JSON `{from, message}` al webhook y muestra la respuesta | El código de la página hace exactamente eso y lee `output` de la respuesta | Código servido por la página | Aprobado |
+| Chat web con RAG | Responde con datos del FAQ | Pregunta sobre la primera cita: 30 min y qué llevar, coincide con las preguntas 18 y 19 del FAQ | `capturas/web-chat-rag-22nov.png`; `pruebas/http-webhook-22nov.log` [1] | Aprobado |
+| POST directo al webhook | HTTP 200 y JSON `{output}` | HTTP 200, `application/json`, 3,6 s, respuesta con el dato del FAQ | `pruebas/http-webhook-22nov.log` [2] | Aprobado |
+| CORS desde otro origen | Un sitio ajeno no puede leer la respuesta | Bloqueado en el navegador (2 pedidos) | `pruebas/http-webhook-22nov.log` [3] | Aprobado |
+| Rechazo del origen o autenticación en el servidor | No aplica: el webhook no tiene autenticación | No verificado desde un cliente sin navegador | Comando `curl` en `pruebas/http-webhook-22nov.log` | Pendiente (requiere una máquina con red) |
+| Telegram Trigger activo | Workflow activo con Webhook y Telegram Trigger | n8n informa `active: true` y 2 disparadores | Consulta a n8n del 22/11/2026 | Aprobado |
+| Telegram: mensaje entrante y respuesta | El bot responde | Verificado el 20/11 con respuesta del bot; no repetido el 22/11 | Ejecuciones #554 y #555; `capturas/ejecucion-554-*.png`, `capturas/ejecucion-555-*.png` | Aprobado (20/11). Repetición del 22/11: pendiente |
+| Modelo de embeddings exacto | Mismo modelo en ingesta y consulta | Ambos nodos: versión 1.2, `options: {}`, sin modelo fijado; el modelo por defecto de la versión 1.2 es `text-embedding-3-small` (código fuente de n8n) | `Ingesta_FAQ_Atelier.json`, `workflow-agente-rag.json` | Aprobado por configuración; no observado en una ejecución |
+| Misma configuración | Idéntica en ambos | Misma versión, mismas opciones, misma credencial lógica de OpenAI | Ambos JSON | Aprobado |
+| Dimensiones | 1536 | `vector_dims(embedding)` = 1536 | `capturas/supabase-vector-dims-1536.png` | Aprobado |
+| Validación horaria | Hora pasada rechazada; futura aceptada; hora de Buenos Aires | 15 de 15 casos correctos con fecha inyectada | `pruebas/pruebas-validar-cita-fecha-inyectada.log` | Aprobado (no con el reloj real de n8n en un día hábil) |
+| Registro en Sheets y correo | Fila y correo tras la confirmación | Verificado en el flujo completo | Ejecuciones #594 a #596; `capturas/ejecucion-595-*.png` | Aprobado |
+
+**Modelo de embeddings y consecuencia de usar modelos distintos.** La consulta solo funciona si el texto de la pregunta se convierte en un vector con el mismo modelo que se usó al indexar el FAQ. Con modelos distintos los vectores quedan en espacios distintos: si la dimensión difiere (por ejemplo, `text-embedding-3-large` de 3072), Supabase rechaza la consulta con un error de dimensión; si la dimensión coincide (`text-embedding-ada-002` y `text-embedding-3-small` son de 1536), no hay error, pero las distancias dejan de tener sentido y el agente recibe fragmentos poco relevantes o contesta "no tengo ese dato" sin aviso. Cambiar de modelo obliga a reindexar todo el FAQ. Como ninguno de los dos JSON fija el modelo, una actualización de n8n que cambie el valor por defecto podría producir ese desfase; para producción conviene fijarlo explícitamente en ambos nodos (sin cambiar el valor actual, para no reindexar).
+
 ## 9. Trazabilidad con los requisitos del proyecto final
 
 | Requisito | Implementación | Evidencia | Estado |
@@ -253,6 +272,13 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 - Las credenciales se gestionan con el sistema de credenciales de n8n.
 - Los mensajes de las clientas se tratan como datos, no como instrucciones.
 - Las capturas de Telegram deben difuminar el chat id y el nombre.
+
+### Riesgos de uso público (demo)
+- **El webhook no tiene autenticación.** `allowedOrigins` (CORS) solo impide que *otras páginas web* lean la respuesta desde un navegador (probado: bloqueado desde otro sitio). No es un control de acceso: cualquier script o servidor puede llamar al endpoint. La documentación de n8n describe esa opción como una lista de orígenes permitidos para CORS y no dice que rechace otros orígenes en el servidor; ese rechazo no se verificó.
+- **Costo y abuso:** cada mensaje ejecuta el agente (OpenAI) y puede consultar Supabase. Sin límite de pedidos, un tercero puede generar gasto. Mitigaciones: tope de gasto en OpenAI, límite de tasa en un proxy delante del webhook, captcha en la página y una clave en un encabezado (`Header Auth`) si el consumidor no es un navegador.
+- **Datos personales:** las solicitudes de cita incluyen nombre, teléfono y correo; se guardan en Google Sheets y se envían a OpenAI (sección 4). Usar solo datos de prueba en la demo.
+- **Memoria por sesión:** la clave `from` la elige el cliente; no hay verificación de identidad. Quien conozca el `from` de otra conversación podría continuarla.
+- **Inyección de instrucciones:** los mensajes se tratan como datos (regla del prompt), pero no hay un filtro previo; la protección real es que registrar y enviar correo exigen `validar_cita` y confirmación explícita.
 
 ## 14. System prompt completo
 
@@ -341,6 +367,7 @@ Opcionales: nombre de la agasajada y fecha de la celebración.
 | [ejecucion-595-web-registrar-y-correo.png](capturas/ejecucion-595-web-registrar-y-correo.png) | `registrar_cita` y `enviar_correo` tras confirmar |
 | [ejecucion-596-web-reconfirmacion-sin-herramientas.png](capturas/ejecucion-596-web-reconfirmacion-sin-herramientas.png) | Reconfirmación sin llamar a ninguna herramienta |
 | [ejecucion-548-api-key-invalida-envio-fallido.png](capturas/ejecucion-548-api-key-invalida-envio-fallido.png) | Camino de error con API key inválida |
+| [web-chat-rag-22nov.png](capturas/web-chat-rag-22nov.png) | Chat web respondiendo con el FAQ (RAG) |
 | [captura-pruebas-validar-cita.png](capturas/captura-pruebas-validar-cita.png) | 15 pruebas de validación horaria con fecha inyectada: todas correctas |
 | [supabase-vector-dims-1536.png](capturas/supabase-vector-dims-1536.png) | `vector_dims(embedding)` = 1536 sobre la tabla `documents` |
 | [supabase-match-documents-verificacion.png](capturas/supabase-match-documents-verificacion.png) | Columna `vector(1536)`, argumentos de `match_documents`, distancia coseno y 14 fragmentos |

@@ -1,0 +1,25 @@
+Prueba contra el webhook de produccion - 22/11/2026, ~21:20 (hora de Buenos Aires)
+Cliente: navegador integrado, pestana abierta en https://atelier-rag.netlify.app
+
+[1] Mensaje escrito en la propia pagina (boton Enviar)
+  Pregunta: "Cuanto dura la primera cita y que tengo que llevar?"
+  Resultado: la pagina mostro la respuesta del asistente en ~10 s (ver capturas/web-chat-rag-22nov.png)
+  Respuesta (resumen): primera cita de 30 minutos; llevar fotos de referencia, ideas de diseno,
+  fecha del evento y, si ya se tienen, zapatos o accesorios. Coincide con las preguntas 18 y 19 del FAQ.
+
+[2] POST directo con fetch desde esa misma pagina
+  POST https://n8n.automatiadash.com/webhook/atelier-whatsapp
+  Content-Type: application/json
+  Cuerpo: {"from":"test-ctrl-http-<marca de tiempo>","message":"Donde queda el atelier?"}
+  Resultado: HTTP 200 | content-type: application/json; charset=utf-8 | 3633 ms
+  Cuerpo: {"output":"El atelier esta en [direccion del FAQ], Buenos Aires, Argentina. Si tenes cita,
+           te recomendamos llegar unos minutos antes. Te gustaria pedir un turno o necesitas algo mas?"}
+  (se omitio la direccion en este log)
+
+[3] CORS desde un origen ajeno (https://example.com), dos pedidos POST
+  - Content-Type: text/plain      -> "Failed to fetch" (bloqueado por el navegador)
+  - Content-Type: application/json -> "Failed to fetch" (bloqueado por el navegador)
+  Conclusion: los navegadores en otros sitios no pueden leer la respuesta.
+  NO se probo desde un cliente sin navegador (curl/script): esta maquina no tiene salida de red.
+  Ese caso requiere correr, desde una maquina con red:
+    curl -i -X POST https://n8n.automatiadash.com/webhook/atelier-whatsapp -H "Content-Type: application/json" -H "Origin: https://sitio-ajeno.example" -d '{"from":"prueba-origen","message":"hola"}'
