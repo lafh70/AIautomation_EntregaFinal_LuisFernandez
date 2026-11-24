@@ -263,6 +263,36 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 - **Normalización del correo en código** (minúsculas y sin espacios) antes de usarlo como clave.
 - **Aviso al sobrescribir:** registrar o notificar cuando `appendOrUpdate` actualiza una fila con datos distintos.
 
+- **Prompt modular:** hoy el system prompt es un solo bloque (~6.300 caracteres, ~1.600 tokens estimados) que se envía completo en cada turno. Se propone un núcleo fijo corto (rol, límites, derivación) y reglas de cita cargadas solo cuando la conversación es de cita, y comparar ambas versiones en recuperación y calidad de respuesta. No se probó.
+- **Prueba de carga progresiva** registrando latencia, tokens, tasa de errores y costo por conversación. No se hizo: no hay mediciones bajo carga.
+
+### Escalabilidad ×10 y privacidad (proyección, no medida)
+
+**Punto de partida (medido en pruebas, no bajo carga):** ~2.200 tokens en una consulta corta y entre ~6.200 y ~12.300 en turnos de cita; ~3,6 s de respuesta en una consulta por webhook (22/11). Supuesto del ROI: 25 consultas por semana (~107 por mes), por lo que ×10 serían ~1.075 por mes.
+
+¿La decisión de nube se sostiene? **Sí, con cambios.** A este volumen el costo de OpenAI y la latencia siguen siendo bajos; lo que se rompe antes es el flujo, no el modelo. Local (Ollama) solo se justifica si la privacidad pasa a ser la restricción dominante.
+
+| Dimensión | Impacto al multiplicar ×10 | Umbral propuesto (a validar en un piloto) | Acción |
+|---|---|---|---|
+| Costo | El consumo de tokens crece de forma lineal con las conversaciones y el prompt largo se paga en cada turno | El gasto mensual en OpenAI supera el presupuesto asignado (USD 5) o el costo por conversación se duplica | Modularizar el prompt, acotar la memoria y fijar un tope de gasto en OpenAI |
+| Latencia | Una instancia de n8n procesa los mensajes de a varios a la vez; en picos las respuestas se encolan y crece el tiempo hasta responder | El tiempo de respuesta supera ~10 s de forma sostenida, o aparecen errores por límite de la API | Pasar n8n a modo cola con workers y reintentos con espera; si el cuello es el modelo, usar uno más chico para consultas del FAQ |
+| Privacidad | Más conversaciones implican más datos personales enviados a OpenAI y guardados en Sheets | Apenas haya clientas reales, antes de ir a producción | Aplicar la política de minimización de abajo; evaluar un modelo local solo si la política no alcanza |
+
+**Otros cambios de arquitectura para ×10:** reemplazar Google Sheets por una base de datos (la hoja no maneja bien escrituras concurrentes ni control de disponibilidad); mover la memoria de sesión fuera de la instancia de n8n; agregar autenticación y límite de pedidos al webhook (ver sección 13).
+
+**Política de minimización de datos personales (propuesta):**
+- No se envía a OpenAI lo que no hace falta para responder. El FAQ no lleva datos personales.
+- Nombre, teléfono y correo solo se piden en el momento de solicitar la cita y se usan para validar, registrar y confirmar.
+- Los logs, capturas y pruebas usan datos ficticios o difuminados. Las capturas con datos reales no se publican.
+- Se informa a la clienta, antes de pedir sus datos, que se procesan con un servicio externo (OpenAI).
+- Antes de producción: definir un plazo de conservación de las filas del Sheet y un procedimiento para borrarlas a pedido.
+
+**Migración gradual a WhatsApp Cloud API (propuesta):** el flujo ya normaliza ambos canales a `chatInput`, `from` y `canal`, así que WhatsApp sería una tercera entrada que produce los mismos tres campos:
+1. Crear una cuenta de Meta verificada y el número de WhatsApp Business.
+2. Reemplazar el `Telegram Trigger` por el trigger de WhatsApp (o un `Webhook` que reciba la Cloud API), mapeando el texto a `chatInput`, el número del remitente a `from` y `canal = 'whatsapp'`.
+3. Agregar una rama del `If` de salida que responda por el nodo de envío de WhatsApp.
+4. Probar en paralelo con Telegram y la web antes de retirar un canal. El agente, las herramientas y la memoria por `from` no cambian.
+
 ## 12. Puesta en marcha
 
 1. **Importar** `workflow-agente-rag.json` en n8n.
