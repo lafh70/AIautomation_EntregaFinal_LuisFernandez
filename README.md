@@ -286,7 +286,7 @@ No hay métricas históricas verificadas del atelier. Los valores son **supuesto
 - El JSON no contiene claves, tokens, `instanceId`, correos ni el identificador del Sheet real.
 - Las credenciales se gestionan con el sistema de credenciales de n8n.
 - Los mensajes de las clientas se tratan como datos, no como instrucciones.
-- Las capturas de Telegram deben difuminar el chat id y el nombre.
+- En las capturas de Telegram se difuminaron el chat id y los datos personales.
 
 ### Riesgos de uso público (demo)
 - **El webhook no tiene autenticación.** `allowedOrigins` (CORS) solo impide que *otras páginas web* lean la respuesta desde un navegador (probado: bloqueado desde otro sitio). No es un control de acceso: cualquier script o servidor puede llamar al endpoint. La documentación de n8n describe esa opción como una lista de orígenes permitidos para CORS y no dice que rechace otros orígenes en el servidor; ese rechazo no se verificó.
